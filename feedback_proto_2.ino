@@ -24,8 +24,10 @@ uint8_t month, day, hour, minute, second;
 uint8_t second_threshold = 0;
 uint16_t year;
 
-// Water Pump
-int water_pin = 1;
+// fan
+int motorA_fan_pin = 0;
+int motorB_fan_pin = 1;
+int pwm_fan = 13;
 
 // Lightblub
 int light_pin = 2;
@@ -33,7 +35,7 @@ int light_pin = 2;
 // sht3x
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
-// Fan
+// water_pin
 int pwm_pin = 3;
 int moA_pin = 4;
 int moB_pin = 5;
@@ -50,10 +52,17 @@ int lcd_counter  = 0;
 //PID
 double Setpoint, Input = 0, Output;
 double Kp=1, Ki=1.5, Kd=0.11;
+
+double Setpoint_2, Input_2 = 0, Output_2;
+double Kp_2 = 0, Ki_2 = 0, Kd_2 = 0;
+
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+PID myPID_2(&Input_2, &Output_2, &Setpoint_2, Kp_2, Ki_2, Kd_2, DIRECT);
 
 //Kalman
 SimpleKalmanFilter simpleKalmanFilter(2, 2, 0.01);
+SimpleKalmanFilter simpleKalmanFilter_2(2, 2, 0.01);
+
 const long SERIAL_REFRESH_TIME = 100;
 long refresh_time;
 
@@ -91,14 +100,16 @@ void setup () {
   //if (1){
   Setpoint = 26;
   myPID.SetMode(AUTOMATIC);
+  myPID_2.SetMode(AUTOMATIC);
+  
   lcd.begin(16, 2);
   lcd.setCursor(0,0);
   //lcd.print("hello");
   
   
   
-  pinMode(water_pin,OUTPUT);
-  //pinMode(light_pin,OUTPUT);
+  //pinMode(water_pin,OUTPUT);
+  pinMode(light_pin,OUTPUT);
   pinMode(pwm_pin,OUTPUT);
   pinMode(moA_pin,OUTPUT);
   pinMode(moB_pin,OUTPUT);
@@ -111,7 +122,7 @@ void loop () {
 
   if (now.Second() != second_threshold){
     second_threshold = now.Second();
-    //printDateTime(now);
+    printDateTime(now);
     float passed_soil_hum = soil_humidity();
     float passed_area_temp = sht3x_tem();
     float passed_area_humid = sht3x_hum();
@@ -124,14 +135,30 @@ void loop () {
     Input = sht3x_tem();
     float measured_value = Input + random(-100,100)/100.0;
     float estimated_value = simpleKalmanFilter.updateEstimate(measured_value);
-    myPID.Compute();
-    Serial.println(String(Setpoint) +","+String(Input)+","+String(Output)+","+String(measured_value)+","+String(estimated_value));
-    //pwm = 255;
-    //fan();
-    //  water_pump();
-   }
+
+    float measured_value_2 = Input_2 + random(-100,100)/100.0;
+    float estimated_value_2 = simpleKalmanFilter_2.updateEstimate(measured_value_2);
     
-  
+    myPID.Compute();
+    myPID_2.Compute();
+    Serial.println(String(Setpoint) +","+String(Input)+","+String(Output)+","+String(measured_value)+","+String(estimated_value));
+   }
+
+   if(now.Hour() >= 6 && now.Hour() <= 22){
+    lightbulb_on();
+   }
+   else{
+    lightbulb_off();
+   }
+  /*
+  if (passed_soil_hum > 82){
+    water_pump();
+    pwm = 255;
+  }
+  else{
+    pwm = 0;
+  }
+   */
   //else{
     
   //}
@@ -176,7 +203,6 @@ void lcd_func(float lcd_area_temp,float lcd_area_humid,float lcd_soil_humid,int 
     lcd.setCursor(0,0);
     lcd.print("Soil Humid");
     lcd.setCursor(0,1);
-    lcd_soil_humid = 100 - map(lcd_soil_humid,max_water_humid,max_water_dry,0,100);
     lcd.print(lcd_soil_humid);
     lcd_counter = 0;
   }
@@ -185,6 +211,7 @@ void lcd_func(float lcd_area_temp,float lcd_area_humid,float lcd_soil_humid,int 
 
 float soil_humidity(){
   float soilhumid_val = analogRead(soilHumid_pin);
+  soilhumid_val = 100 - map(soilhumid_val,max_water_humid,max_water_dry,0,100);
   //Serial.println("Soil Humidity : ");
   //Serial.print(soilhumid_val);
   return soilhumid_val;
@@ -210,20 +237,21 @@ float sht3x_tem(){
   return area_temp;
 }
 
-void fan(){
+void water_pump(){
   analogWrite(pwm_pin, pwm);
   digitalWrite(moA_pin, HIGH);
   digitalWrite(moB_pin, LOW);
 
 }
 
-void lightbulb(){
+void lightbulb_on(){
   digitalWrite(light_pin,HIGH);
-  Serial.println("light is on");
+  //Serial.println("light is on");
 
 }
 
-void water_pump(){
-  digitalWrite(water_pin,HIGH);
-  Serial.println("water pump");
+void lightbulb_off(){
+  digitalWrite(light_pin,LOW);
+  //Serial.println("light is on");
+
 }
