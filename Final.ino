@@ -84,11 +84,11 @@ int areatemp_above_fan_threshold = 0;
 
 //PID
 double Setpoint, Input, Output;
-double Kp = 1.98, Ki = 0.62, Kd = 0.17;
+double Kp = 1.98, Ki = 0.62, Kd = 0.03875;
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 
 double Setpoint_2, Input_2, Output_2;
-double Kp_2 = 2.56, Ki_2 = 0.8 , Kd_2 = 0.1 ;
+double Kp_2 = 2.56, Ki_2 = 0.8 , Kd_2 = 0.05 ;
 PID myPID_2(&Input_2, &Output_2, &Setpoint_2, Kp_2, Ki_2, Kd_2, DIRECT);
 
 void setup () {
