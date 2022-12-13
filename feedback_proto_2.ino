@@ -52,7 +52,7 @@ int lcd_counter  = 0;
 
 //Kalman
 SimpleKalmanFilter simpleKalmanFilter(2.5, 4, 0.05); // Soil humidity
-SimpleKalmanFilter simpleKalmanFilter_2(0.3, 0.2, 0.01); // Area Temp
+SimpleKalmanFilter simpleKalmanFilter_2(0.3, 0.4, 0.01); // Area Temp
 SimpleKalmanFilter simpleKalmanFilter_3(2, 3, 0.01); // Area Humidity
 float passed_soil_hum = 0;
 float passed_area_temp = 0;
